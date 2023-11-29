@@ -1,3 +1,4 @@
+import os
 import streamlit as st # importação da bilioteca para construir a interface web
 import cv2 # biblioteca para processamento de imagem
 import numpy as np # para realizar calculos
@@ -71,9 +72,20 @@ while True:
 
     # verifico se o botao de tirar foto foi clicado
     if save_image:
-        # vai salvar a imagem com o numero do telefone
-        cv2.imwrite(f'{name}_{phone_input}.jpg', frame)
-        # e vai exibir na tela uma mensagem que a imagem foi salva
-        st.write(f"Imagem salva como '{name}_{phone_input}.jpg'")
+        # Garante que o diretório já exista, ou vai criá-lo
+        save_dir = os.path.join(os.getcwd(), name)
+        os.makedirs(save_dir, exist_ok=True)
+
+        # Caminho completo para a imagem com o número do telefone
+        image_path = os.path.join(save_dir, f'{phone_input}.jpg')
+
+        # Salva a imagem
+        cv2.imwrite(image_path, frame)
+
+        # Exibe na tela uma mensagem que a imagem foi salva
+        st.write(f"Imagem salva como '{image_path}'")
+
+        # Reseta o botão de salvar para evitar looping de salvamentos
+        save_image = False
 
 cap.release() # liberar a camera
