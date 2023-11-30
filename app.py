@@ -6,20 +6,20 @@ import imutils
 from moviepy.editor import VideoFileClip  # lib de codecs de video
 from PIL import Image
 
-
 img_ext = ['png', 'jpg', 'jpeg']
-video_ext = [ 'mp4', 'gif']
+video_ext = ['mp4', 'gif']
 
 file_ext = img_ext + video_ext
+
 
 def __listar_webcams():
     index = 0
     lista_de_webcams = []
     while True:
         cap = cv2.VideoCapture(index, cv2.CAP_DSHOW)
-         # essa linha é a mesma usada la em baixo, onde tem 'ret' e 'frame',
-         # então eu verifico que cap.read()[0] é true pra saber se a camera existe
-         # e se está disponível
+        # essa linha é a mesma usada la em baixo, onde tem 'ret' e 'frame',
+        # então eu verifico que cap.read()[0] é true pra saber se a camera existe
+        # e se está disponível
         if not cap.read()[0]:
             break
         else:
@@ -27,6 +27,7 @@ def __listar_webcams():
         cap.release()
         index += 1
     return lista_de_webcams
+
 
 # remover a imagem de fundo
 def __remove_background(frame, background_image, lower_bound, upper_bound):
@@ -98,7 +99,7 @@ st.subheader("Utilizando Streamlit e OpenCV")  # subtitulo da aplicação
 
 # Envio do arquivo de imagem ou vídeo
 uploaded_file = st.file_uploader(
-    "Escolha uma imagem ou vídeo de fundo", 
+    "Escolha uma imagem ou vídeo de fundo",
     type=file_ext
 )
 background_image = None
@@ -110,7 +111,7 @@ if uploaded_file is not None:
     if file_extension in img_ext:
         # Decodificar a imagem
         background_image = cv2.imdecode(np.frombuffer(uploaded_file.read(), np.uint8), cv2.IMREAD_COLOR)
-    
+
     elif file_extension in video_ext:
         # Salvar o vídeo em um arquivo temporário
         video_dir = 'temp'
@@ -127,6 +128,8 @@ if uploaded_file is not None:
 name = st.text_input("Nome:")
 phone_input = st.text_input("Número de telefone:")
 save_image = st.button("Salvar Foto")
+rotate_button = st.button("Girar no sentido horário")  # Botão de rotação
+rotation_angle = 0
 
 # componente para escolher a webcam, no momento sem possibilidade de identificar nome
 webcams_disponiveis = __listar_webcams()
@@ -144,6 +147,9 @@ while True:
 
     # Redimensionar o frame para uma resolução desejada
     frame = imutils.resize(frame, width=1920, height=1080)
+
+    # Aplicando rotação ao frame
+    frame = imutils.rotate(frame, rotation_angle)
 
     if background_image is not None:
         frame = __remove_background(frame, background_image, lower_bound, upper_bound)
@@ -173,6 +179,11 @@ while True:
         # Converter a imagem para PNG mantendo a qualidade
         img = Image.open(image_path)
         img.save(image_path, format='PNG', compress_level=0)
+
+    # Condição da rotação ao apertar no botão
+    if rotate_button:
+        rotation_angle += 90
+        rotation_angle %= 360  # Limitando a 360 graus
 
 cap.release()  # Liberar a câmera
 if background_video is not None:
