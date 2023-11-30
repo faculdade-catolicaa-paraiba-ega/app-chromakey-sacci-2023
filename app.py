@@ -145,6 +145,9 @@ while True:
         st.warning("Câmera não iniciada")
         break
 
+    # espelhamento correto da imagem
+    frame = cv2.flip(frame, 1)
+
     # Redimensionar o frame para uma resolução desejada
     frame = imutils.resize(frame, width=1920, height=1080)
 
