@@ -2,7 +2,9 @@ import os
 import streamlit as st  # importação da bilioteca para construir a interface web
 import cv2  # biblioteca para processamento de imagem
 import numpy as np  # para realizar calculos
+import imutils
 from moviepy.editor import VideoFileClip  # lib de codecs de video
+from PIL import Image
 
 
 # remover a imagem de fundo
@@ -109,6 +111,9 @@ while True:
         st.warning("Câmera não iniciada")
         break
 
+    # Redimensionar o frame para uma resolução desejada
+    frame = imutils.resize(frame, width=1920, height=1080)
+
     if background_image is not None:
         frame = remove_background(frame, background_image, lower_bound, upper_bound)
 
@@ -123,16 +128,20 @@ while True:
         os.makedirs(save_dir, exist_ok=True)
 
         # Caminho completo para a imagem com o número do telefone
-        image_path = os.path.join(save_dir, f'{phone_input}.jpg')
+        image_path = os.path.join(save_dir, f'{phone_input}.png')
 
-        # Salvar a imagem
-        cv2.imwrite(image_path, frame)
+        # Salvar a imagem como PNG
+        cv2.imwrite(image_path, frame, [cv2.IMWRITE_PNG_COMPRESSION, 0])
 
         # Exibir mensagem na tela que a imagem foi salva
         st.write(f"Imagem salva como '{image_path}'")
 
         # Resetar o botão de salvar para evitar salvamentos repetidos
         save_image = False
+
+        # Converter a imagem para PNG mantendo a qualidade
+        img = Image.open(image_path)
+        img.save(image_path, format='PNG', compress_level=0)
 
 cap.release()  # Liberar a câmera
 if background_video is not None:
