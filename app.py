@@ -12,7 +12,7 @@ video_ext = [ 'mp4', 'gif']
 
 file_ext = img_ext + video_ext
 
-def listar_webcams():
+def __listar_webcams():
     index = 0
     lista_de_webcams = []
     while True:
@@ -29,7 +29,7 @@ def listar_webcams():
     return lista_de_webcams
 
 # remover a imagem de fundo
-def remove_background(frame, background_image, lower_bound, upper_bound):
+def __remove_background(frame, background_image, lower_bound, upper_bound):
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)  # convertendo a imagem do espaço de cor BGR para HSV
 
     mask = cv2.inRange(hsv, lower_bound, upper_bound)  # cria uma mascara pro chromakey, com tolerancias
@@ -47,7 +47,7 @@ def remove_background(frame, background_image, lower_bound, upper_bound):
 
 
 # Função para remover o fundo verde e substituir por um vídeo MP4
-def remove_background_and_add_video(frame, background_video, lower_bound, upper_bound):
+def __remove_background_and_add_video(frame, background_video, lower_bound, upper_bound):
     # Convertendo o frame para o espaço de cores HSV
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
@@ -79,7 +79,7 @@ def remove_background_and_add_video(frame, background_video, lower_bound, upper_
 
 
 # converte uma cor RGB para HSV com tolerancia
-def convert_to_hsv_with_tolerance(rgb_color, tolerance=40):
+def __convert_to_hsv_with_tolerance(rgb_color, tolerance=40):
     bgr_color = rgb_color[::-1]  # "conversao" RGB -> BGR: (43, 177, 9)
     hsv_color = cv2.cvtColor(np.uint8([[bgr_color]]), cv2.COLOR_BGR2HSV)[0][0]  # Conversão de BGR para HSV
     lower_bound = np.array([max(hsv_color[0] - tolerance, 0), 50, 50])  # limite minimo para o filtro HSV
@@ -88,7 +88,7 @@ def convert_to_hsv_with_tolerance(rgb_color, tolerance=40):
 
 
 chroma_key_rgb = (9, 117, 43)  # é a cor em RGB do ChromaKey
-lower_bound, upper_bound = convert_to_hsv_with_tolerance(
+lower_bound, upper_bound = __convert_to_hsv_with_tolerance(
     chroma_key_rgb,
     10
 )  # Converter a cor HEX-RGB para HSV com tolerancia
@@ -129,7 +129,7 @@ phone_input = st.text_input("Número de telefone:")
 save_image = st.button("Salvar Foto")
 
 # componente para escolher a webcam, no momento sem possibilidade de identificar nome
-webcams_disponiveis = listar_webcams()
+webcams_disponiveis = __listar_webcams()
 webcam_selecionada = st.selectbox("Selecione a webcam:", webcams_disponiveis)
 
 # Configurar a câmera (0 para câmera nativa, notebook)
@@ -146,10 +146,10 @@ while True:
     frame = imutils.resize(frame, width=1920, height=1080)
 
     if background_image is not None:
-        frame = remove_background(frame, background_image, lower_bound, upper_bound)
+        frame = __remove_background(frame, background_image, lower_bound, upper_bound)
 
     if background_video is not None:
-        frame = remove_background_and_add_video(frame, background_video, lower_bound, upper_bound)
+        frame = __remove_background_and_add_video(frame, background_video, lower_bound, upper_bound)
 
     frameST.image(frame, channels='BGR', use_column_width=True)
 
