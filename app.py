@@ -72,7 +72,7 @@ st.title("Aplicação de Chroma Key")  # titulo da aplicação
 st.subheader("Utilizando Streamlit e OpenCV")  # subtitulo da aplicação
 
 # Envio do arquivo de imagem ou vídeo
-uploaded_file = st.file_uploader("Escolha uma imagem ou vídeo de fundo", type=['png', 'jpg', 'jpeg', 'mp4'])
+uploaded_file = st.file_uploader("Escolha uma imagem ou vídeo de fundo", type=['png', 'jpg', 'jpeg', 'mp4', 'gif'])
 background_image = None
 background_video = None
 
@@ -82,7 +82,7 @@ if uploaded_file is not None:
     if file_extension in ['png', 'jpg', 'jpeg']:
         # Decodificar a imagem
         background_image = cv2.imdecode(np.frombuffer(uploaded_file.read(), np.uint8), cv2.IMREAD_COLOR)
-    elif file_extension == 'mp4':
+    elif file_extension in ['mp4', 'gif'] :
         # Salvar o vídeo em um arquivo temporário
         video_dir = 'temp'
         os.makedirs(video_dir, exist_ok=True)
@@ -100,7 +100,7 @@ phone_input = st.text_input("Número de telefone:")
 save_image = st.button("Salvar Foto")
 
 # Configurar a câmera (0 para câmera nativa, notebook)
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 frameST = st.empty()
 
 while True:
