@@ -7,6 +7,27 @@ from moviepy.editor import VideoFileClip  # lib de codecs de video
 from PIL import Image
 
 
+img_ext = ['png', 'jpg', 'jpeg']
+video_ext = [ 'mp4', 'gif']
+
+file_ext = img_ext + video_ext
+
+def listar_webcams():
+    index = 0
+    lista_de_webcams = []
+    while True:
+        cap = cv2.VideoCapture(index, cv2.CAP_DSHOW)
+         # essa linha é a mesma usada la em baixo, onde tem 'ret' e 'frame',
+         # então eu verifico que cap.read()[0] é true pra saber se a camera existe
+         # e se está disponível
+        if not cap.read()[0]:
+            break
+        else:
+            lista_de_webcams.append(index)
+        cap.release()
+        index += 1
+    return lista_de_webcams
+
 # remover a imagem de fundo
 def remove_background(frame, background_image, lower_bound, upper_bound):
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)  # convertendo a imagem do espaço de cor BGR para HSV
@@ -67,24 +88,30 @@ def convert_to_hsv_with_tolerance(rgb_color, tolerance=40):
 
 
 chroma_key_rgb = (9, 117, 43)  # é a cor em RGB do ChromaKey
-lower_bound, upper_bound = convert_to_hsv_with_tolerance(chroma_key_rgb,
-                                                         10)  # Converter a cor HEX-RGB para HSV com tolerancia
+lower_bound, upper_bound = convert_to_hsv_with_tolerance(
+    chroma_key_rgb,
+    10
+)  # Converter a cor HEX-RGB para HSV com tolerancia
 
 st.title("Aplicação de Chroma Key")  # titulo da aplicação
 st.subheader("Utilizando Streamlit e OpenCV")  # subtitulo da aplicação
 
 # Envio do arquivo de imagem ou vídeo
-uploaded_file = st.file_uploader("Escolha uma imagem ou vídeo de fundo", type=['png', 'jpg', 'jpeg', 'mp4', 'gif'])
+uploaded_file = st.file_uploader(
+    "Escolha uma imagem ou vídeo de fundo", 
+    type=file_ext
+)
 background_image = None
 background_video = None
 
 if uploaded_file is not None:
     file_extension = uploaded_file.name.split(".")[-1].lower()
 
-    if file_extension in ['png', 'jpg', 'jpeg']:
+    if file_extension in img_ext:
         # Decodificar a imagem
         background_image = cv2.imdecode(np.frombuffer(uploaded_file.read(), np.uint8), cv2.IMREAD_COLOR)
-    elif file_extension in ['mp4', 'gif'] :
+    
+    elif file_extension in video_ext:
         # Salvar o vídeo em um arquivo temporário
         video_dir = 'temp'
         os.makedirs(video_dir, exist_ok=True)
@@ -101,8 +128,12 @@ name = st.text_input("Nome:")
 phone_input = st.text_input("Número de telefone:")
 save_image = st.button("Salvar Foto")
 
+# componente para escolher a webcam, no momento sem possibilidade de identificar nome
+webcams_disponiveis = listar_webcams()
+webcam_selecionada = st.selectbox("Selecione a webcam:", webcams_disponiveis)
+
 # Configurar a câmera (0 para câmera nativa, notebook)
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(webcam_selecionada)
 frameST = st.empty()
 
 while True:
