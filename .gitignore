@@ -1,1 +1,7 @@
 venv/
+*/
+
+!.gitignore
+!app.py
+!README.md
+!req.txt

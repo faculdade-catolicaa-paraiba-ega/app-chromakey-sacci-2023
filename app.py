@@ -12,68 +12,63 @@ video_ext = ['mp4', 'gif']
 file_ext = img_ext + video_ext
 
 
-def __listar_webcams():
-    index = 0
-    lista_de_webcams = []
-    while True:
-        cap = cv2.VideoCapture(index, cv2.CAP_DSHOW)
-        # essa linha é a mesma usada la em baixo, onde tem 'ret' e 'frame',
-        # então eu verifico que cap.read()[0] é true pra saber se a camera existe
-        # e se está disponível
-        if not cap.read()[0]:
-            break
-        else:
-            lista_de_webcams.append(index)
-        cap.release()
-        index += 1
-    return lista_de_webcams
-
 
 # remover a imagem de fundo
 def __remove_background(frame, background_image, lower_bound, upper_bound):
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)  # convertendo a imagem do espaço de cor BGR para HSV
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(hsv, lower_bound, upper_bound)
+    mask = cv2.erode(mask, None, iterations=2)
+    mask = cv2.dilate(mask, None, iterations=2)
+    foreground = cv2.bitwise_and(frame, frame, mask=~mask)
 
-    mask = cv2.inRange(hsv, lower_bound, upper_bound)  # cria uma mascara pro chromakey, com tolerancias
-    mask = cv2.erode(mask, None, iterations=2)  # aplico filtro de erosao
-    mask = cv2.dilate(mask, None, iterations=2)  # aplico filtro de dilatação
+    # Calcular a proporção do frame e do background
+    frame_height, frame_width = frame.shape[:2]
+    background_height, background_width = background_image.shape[:2]
+    scale = max(frame_width / background_width, frame_height / background_height)
 
-    foreground = cv2.bitwise_and(frame, frame, mask=~mask)  # extrair tudo que não é "verde", que não é ChromaKey
+    # Redimensionar o background
+    resized_background = cv2.resize(background_image, (int(background_width * scale), int(background_height * scale)))
 
-    background = cv2.resize(background_image, (frame.shape[1], frame.shape[0]))  # redimensiono a nova imagem de fundo
-    background = cv2.bitwise_and(background, background, mask=mask)  # aplico uma mascara pro fundo da imagem
+    # Cortar o excesso do background
+    start_x = (resized_background.shape[1] - frame_width) // 2
+    start_y = (resized_background.shape[0] - frame_height) // 2
+    cropped_background = resized_background[start_y:start_y + frame_height, start_x:start_x + frame_width]
 
-    combined = cv2.add(foreground, background)  # junto o que não é o chromakey com a imagem de fundo
+    # Aplicar a máscara e combinar foreground e background
+    background = cv2.bitwise_and(cropped_background, cropped_background, mask=mask)
+    combined = cv2.add(foreground, background)
 
-    return combined  # retorno o frame criado
+    return combined
 
 
 # Função para remover o fundo verde e substituir por um vídeo MP4
 def __remove_background_and_add_video(frame, background_video, lower_bound, upper_bound):
-    # Convertendo o frame para o espaço de cores HSV
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-    # Criando uma máscara para a região de fundo verde (Chroma Key)
     mask = cv2.inRange(hsv, lower_bound, upper_bound)
     mask = cv2.erode(mask, None, iterations=2)
     mask = cv2.dilate(mask, None, iterations=2)
-
-    # Aplicando a máscara para obter a região de primeiro plano (pessoa)
     foreground = cv2.bitwise_and(frame, frame, mask=~mask)
 
-    # Lendo o próximo frame do vídeo de fundo
     ret, background_frame = background_video.read()
     if not ret:
-        # Se atingir o final do vídeo, reinicia do início
         background_video.set(cv2.CAP_PROP_POS_FRAMES, 0)
         _, background_frame = background_video.read()
 
-    # Redimensionando o frame de fundo para o tamanho do frame da câmera
-    background_frame = cv2.resize(background_frame, (frame.shape[1], frame.shape[0]))
+    # Calcular a proporção do frame e do background_frame
+    frame_height, frame_width = frame.shape[:2]
+    background_height, background_width = background_frame.shape[:2]
+    scale = max(frame_width / background_width, frame_height / background_height)
 
-    # Aplicando a máscara para obter a região de fundo substituída
-    background = cv2.bitwise_and(background_frame, background_frame, mask=mask)
+    # Redimensionar o background_frame
+    resized_background_frame = cv2.resize(background_frame, (int(background_width * scale), int(background_height * scale)))
 
-    # Combinando a região de primeiro plano e a região de fundo substituída
+    # Cortar o excesso do background_frame
+    start_x = (resized_background_frame.shape[1] - frame_width) // 2
+    start_y = (resized_background_frame.shape[0] - frame_height) // 2
+    cropped_background_frame = resized_background_frame[start_y:start_y + frame_height, start_x:start_x + frame_width]
+
+    # Aplicar a máscara e combinar foreground e background
+    background = cv2.bitwise_and(cropped_background_frame, cropped_background_frame, mask=mask)
     combined = cv2.add(foreground, background)
 
     return combined
@@ -125,18 +120,19 @@ if uploaded_file is not None:
         background_video = cv2.VideoCapture(video_path)
 
 # Inicialização de variáveis
-name = st.text_input("Nome:")
-phone_input = st.text_input("Número de telefone:")
+name_and_number = st.text_input("Nome e Número:")
+##phone_input = st.text_input("Número de telefone:")
 save_image = st.button("Salvar Foto")
-rotate_button = st.button("Girar no sentido horário")  # Botão de rotação
-rotation_angle = 0
+##rotate_button = st.button("Girar no sentido horário")  # Botão de rotação
+##rotation_angle = 0
 
 # componente para escolher a webcam, no momento sem possibilidade de identificar nome
-webcams_disponiveis = __listar_webcams()
-webcam_selecionada = st.selectbox("Selecione a webcam:", webcams_disponiveis)
+##webcams_disponiveis = __listar_webcams()
+##webcam_selecionada = st.selectbox("Selecione a webcam:", webcams_disponiveis)
 
 # Configurar a câmera (0 para câmera nativa, notebook)
-cap = cv2.VideoCapture(webcam_selecionada)
+cap = cv2.VideoCapture(1)
+
 frameST = st.empty()
 
 while True:
@@ -146,13 +142,21 @@ while True:
         break
 
     # espelhamento correto da imagem
+    # EM PÉ
+    frame = cv2.flip(frame, 1)
+    frame = cv2.rotate(frame, 2, frame)
     frame = cv2.flip(frame, 1)
 
+    # DEITADO
+    #frame = cv2.flipe(frame, 1)
+
     # Redimensionar o frame para uma resolução desejada
-    frame = imutils.resize(frame, width=1920, height=1080)
+    
+    frame = imutils.resize(frame, height=1080)
+    frame = imutils.resize(frame, width=1080)
 
     # Aplicando rotação ao frame
-    frame = imutils.rotate(frame, rotation_angle)
+    ##frame = imutils.rotate(frame, rotation_angle)
 
     if background_image is not None:
         frame = __remove_background(frame, background_image, lower_bound, upper_bound)
@@ -164,11 +168,11 @@ while True:
 
     if save_image:
         # Garantir que o diretório exista ou criá-lo
-        save_dir = os.path.join(os.getcwd(), name)
+        save_dir = os.path.join(os.getcwd(), name_and_number)
         os.makedirs(save_dir, exist_ok=True)
 
         # Caminho completo para a imagem com o número do telefone
-        image_path = os.path.join(save_dir, f'{phone_input}.png')
+        image_path = os.path.join(save_dir, f'{name_and_number}.png')
 
         # Salvar a imagem como PNG
         cv2.imwrite(image_path, frame, [cv2.IMWRITE_PNG_COMPRESSION, 0])
@@ -184,9 +188,9 @@ while True:
         img.save(image_path, format='PNG', compress_level=0)
 
     # Condição da rotação ao apertar no botão
-    if rotate_button:
-        rotation_angle += 90
-        rotation_angle %= 360  # Limitando a 360 graus
+    ##if rotate_button:
+        ##rotation_angle += 90
+        ##rotation_angle %= 360  # Limitando a 360 graus
 
 cap.release()  # Liberar a câmera
 if background_video is not None:
